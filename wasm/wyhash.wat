@@ -3,8 +3,8 @@
   (type (;1;) (func (param i32 i64 i64 i64 i64)))
   (type (;2;) (func (param i64 i32)))
   (type (;3;) (func (param i64) (result f64)))
-  (type (;4;) (func (param i32 i32 i64 i32) (result i64)))
-  (type (;5;) (func (param i64 i64) (result i64)))
+  (type (;4;) (func (param i64 i64) (result i64)))
+  (type (;5;) (func (param i32 i32 i64 i32) (result i64)))
   (type (;6;) (func (param i32) (result i64)))
   (func (;0;) (type 0))
   (func (;1;) (type 0)
@@ -690,7 +690,30 @@
     f64.convert_i64_u
     f64.const 0x1p-52 (;=2.22045e-16;)
     f64.mul)
-  (func (;6;) (type 4) (param i32 i32 i64 i32) (result i64)
+  (func (;6;) (type 4) (param i64 i64) (result i64)
+    (local i32)
+    global.get 0
+    i32.const 16
+    i32.sub
+    local.tee 2
+    global.set 0
+    local.get 2
+    local.get 1
+    i64.const 0
+    local.get 0
+    i64.const 0
+    call 2
+    local.get 2
+    i32.const 8
+    i32.add
+    i64.load
+    local.set 0
+    local.get 2
+    i32.const 16
+    i32.add
+    global.set 0
+    local.get 0)
+  (func (;7;) (type 5) (param i32 i32 i64 i32) (result i64)
     (local i32 i64 i64 i32 i64 i64 i64 i64)
     global.get 0
     i32.const 112
@@ -1013,7 +1036,7 @@
     local.get 5
     local.get 2
     i64.xor)
-  (func (;7;) (type 5) (param i64 i64) (result i64)
+  (func (;8;) (type 4) (param i64 i64) (result i64)
     (local i32)
     global.get 0
     i32.const 32
@@ -1063,7 +1086,7 @@
     local.get 0
     local.get 1
     i64.xor)
-  (func (;8;) (type 6) (param i32) (result i64)
+  (func (;9;) (type 6) (param i32) (result i64)
     (local i32 i64 i64)
     global.get 0
     i32.const 16
@@ -1100,34 +1123,39 @@
     local.get 2
     local.get 3
     i64.xor)
-  (func (;9;) (type 5) (param i64 i64) (result i64)
+  (func (;10;) (type 4) (param i64 i64) (result i64)
     local.get 0
     local.get 1
-    call 7
-    call 1)
-  (func (;10;) (type 6) (param i32) (result i64)
-    local.get 0
     call 8
     call 1)
-  (func (;11;) (type 3) (param i64) (result f64)
+  (func (;11;) (type 6) (param i32) (result i64)
     local.get 0
-    call 5
+    call 9
     call 1)
   (func (;12;) (type 3) (param i64) (result f64)
     local.get 0
+    call 5
+    call 1)
+  (func (;13;) (type 4) (param i64 i64) (result i64)
+    local.get 0
+    local.get 1
+    call 6
+    call 1)
+  (func (;14;) (type 3) (param i64) (result f64)
+    local.get 0
     call 4
     call 1)
-  (func (;13;) (type 2) (param i64 i32)
+  (func (;15;) (type 2) (param i64 i32)
     local.get 0
     local.get 1
     call 3
     call 1)
-  (func (;14;) (type 4) (param i32 i32 i64 i32) (result i64)
+  (func (;16;) (type 5) (param i32 i32 i64 i32) (result i64)
     local.get 0
     local.get 1
     local.get 2
     local.get 3
-    call 6
+    call 7
     call 1)
   (table (;0;) 1 1 funcref)
   (memory (;0;) 1)
@@ -1137,10 +1165,11 @@
   (export "memory" (memory 0))
   (export "__data_end" (global 1))
   (export "__heap_base" (global 2))
-  (export "wyhash64" (func 9))
-  (export "wyrand" (func 10))
-  (export "wy2u01" (func 11))
-  (export "wy2gau" (func 12))
-  (export "make_secret" (func 13))
-  (export "wyhash" (func 14))
+  (export "wyhash64" (func 10))
+  (export "wyrand" (func 11))
+  (export "wy2u01" (func 12))
+  (export "wy2u0k" (func 13))
+  (export "wy2gau" (func 14))
+  (export "make_secret" (func 15))
+  (export "wyhash" (func 16))
   (data (;0;) (i32.const 1024) "\0f\17\1b\1d\1e'+-.3569:<GKMNSUVYZ\5ccefijlqrtx\87\8b\8d\8e\93\95\96\99\9a\9c\a3\a5\a6\a9\aa\ac\b1\b2\b4\b8\c3\c5\c6\c9\ca\cc\d1\d2\d4\d8\e1\e2\e4\e8\f0"))
