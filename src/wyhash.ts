@@ -10,6 +10,8 @@ export const WYHASH_DEFAULT_SECRETS = [
   0x589965cc75374cc3n,
 ] as const;
 
+const textEncoder = new TextEncoder();
+
 // Utils
 
 function writeSecrets(
@@ -143,7 +145,7 @@ export function wyhash(
   secrets?: readonly [bigint, bigint, bigint, bigint]
 ) {
   if (typeof key === "string") {
-    key = new TextEncoder().encode(key);
+    key = textEncoder.encode(key);
   }
   if (key.byteLength > MAX_KEY_SIZE) {
     throw new Error("Key is too long.");
