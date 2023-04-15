@@ -144,26 +144,37 @@ export function wyhash(
   seed: bigint,
   secrets?: readonly [bigint, bigint, bigint, bigint]
 ) {
+  let keySize: number;
   if (typeof key === "string") {
-    key = textEncoder.encode(key);
+    const result = textEncoder.encodeInto(key, MEM_KEY);
+    if (result.read !== key.length) {
+      MEM_KEY.fill(0, 0, result.written);
+      throw new Error("Key is too long.");
+    }
+    keySize = result.written;
+  } else {
+    if (key.byteLength > MAX_KEY_SIZE) {
+      throw new Error("Key is too long.");
+    }
+    MEM_KEY.set(key);
+    keySize = key.byteLength;
   }
-  if (key.byteLength > MAX_KEY_SIZE) {
-    throw new Error("Key is too long.");
-  }
-  MEM_KEY.set(key);
+
   const value = asUI64N(
     wasmExports.wyhash(
       MEM_KEY.byteOffset,
-      key.byteLength,
+      keySize,
       seed,
       secrets
         ? writeSecrets(MEM_SECRETS_REF, secrets).byteOffset
         : MEM_SECRETS_DEFAULT.byteOffset
     )
   );
+
   if (secrets) {
     clearMemory(MEM_SECRETS_REF);
   }
-  MEM_KEY.fill(0, 0, key.byteLength);
+  MEM_KEY.fill(0, 0, keySize);
+
   return value;
 }
