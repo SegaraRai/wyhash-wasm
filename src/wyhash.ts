@@ -56,6 +56,7 @@ const wasmModule = new WebAssembly.Module(WYHASH_WASM_DATA);
 const wasmInstance = new WebAssembly.Instance(wasmModule);
 const wasmExports = wasmInstance.exports as WyhashWASMExports;
 const wasmBuffer = wasmExports.memory.buffer;
+const wasmBufferUI8 = new Uint8Array(wasmBuffer);
 
 const HEAP_BASE = wasmExports.__heap_base.value as number;
 let heapOffset = HEAP_BASE;
@@ -64,13 +65,24 @@ const allocate = (size: number): DataView => {
   heapOffset += size;
   return view;
 };
-const MEM_SEED = allocate(0x08);
+const MEM_SECRETS_DEFAULT = allocate(0x20);
 const MEM_SECRETS_MAKE = allocate(0x20);
 const MEM_SECRETS_REF = allocate(0x20);
-const MEM_SECRETS_DEFAULT = allocate(0x20);
+const MEM_SEED = allocate(0x08);
 const MEM_KEY = new Uint8Array(wasmBuffer, heapOffset);
 
 writeSecrets(MEM_SECRETS_DEFAULT, WYHASH_DEFAULT_SECRETS);
+
+// Memory clear functions
+
+function clearMemory(view: DataView): void {
+  wasmBufferUI8.fill(0, view.byteOffset, view.byteOffset + view.byteLength);
+}
+
+function withClearMemory<T>(view: DataView, value: T): T {
+  clearMemory(view);
+  return value;
+}
 
 // Exports
 
@@ -87,14 +99,15 @@ export function wyrand(
 ): [value: bigint, nextSeed: bigint] | bigint {
   if (typeof arg === "bigint") {
     MEM_SEED.setBigUint64(0, arg, true);
-    return [
+    return withClearMemory(MEM_SEED, [
       asUI64N(wasmExports.wyrand(MEM_SEED.byteOffset)),
       MEM_SEED.getBigUint64(0, true),
-    ];
+    ]);
   } else {
     MEM_SEED.setBigUint64(0, arg.seed, true);
     const value = asUI64N(wasmExports.wyrand(MEM_SEED.byteOffset));
     arg.seed = MEM_SEED.getBigUint64(0, true);
+    clearMemory(MEM_SEED);
     return value;
   }
 }
@@ -121,7 +134,7 @@ export function wy2u0k(r: bigint, k: bigint | number): bigint | number {
 
 export function makeSecrets(seed: bigint): [bigint, bigint, bigint, bigint] {
   wasmExports.make_secret(seed, MEM_SECRETS_MAKE.byteOffset);
-  return readSecrets(MEM_SECRETS_MAKE);
+  return withClearMemory(MEM_SECRETS_MAKE, readSecrets(MEM_SECRETS_MAKE));
 }
 
 export function wyhash(
@@ -136,7 +149,7 @@ export function wyhash(
     throw new Error("Key is too long.");
   }
   MEM_KEY.set(key);
-  return asUI64N(
+  const value = asUI64N(
     wasmExports.wyhash(
       MEM_KEY.byteOffset,
       key.byteLength,
@@ -146,4 +159,9 @@ export function wyhash(
         : MEM_SECRETS_DEFAULT.byteOffset
     )
   );
+  if (secrets) {
+    clearMemory(MEM_SECRETS_REF);
+  }
+  MEM_KEY.fill(0, 0, key.byteLength);
+  return value;
 }
