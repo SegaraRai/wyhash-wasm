@@ -1,0 +1,10 @@
+{
+  "files.associations": {
+    "wyhash.h": "c"
+  },
+  "cSpell.words": [
+    "wyhash",
+    "wyrand"
+  ],
+  "deno.enable": true
+}

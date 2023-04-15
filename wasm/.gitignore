@@ -1,0 +1,3 @@
+#wasmData.ts
+#*.wasm
+#*.wat
