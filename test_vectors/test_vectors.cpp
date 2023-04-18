@@ -1,3 +1,4 @@
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -8,7 +9,7 @@
 #include "../wyhash/wyhash.h"
 
 #if defined(_MSC_VER)
-#  define HEX64 "0x%016I64x"
+#  define HEX64 "0x%016llx"
 #else
 #  define HEX64 "0x%016lx"
 #endif
@@ -16,6 +17,46 @@
 #define SECRET_SPEC HEX64 ", " HEX64 ", " HEX64 ", " HEX64
 
 using namespace std::literals;
+
+namespace {
+
+consteval std::array<char, 256> create_escape_map() {
+  std::array<char, 256> map = {};
+  for (std::size_t i = 0; i < map.size(); i++) {
+    map[i] = 0x20 <= i && i <= 0x7e ? static_cast<char>(i) : '\0';
+  }
+  map[0] = '0';
+  map[7] = 'a';
+  map[8] = 'b';
+  map[9] = 't';
+  map[10] = 'n';
+  map[11] = 'v';
+  map[12] = 'f';
+  map[13] = 'r';
+  return map;
+}
+
+std::string escape(const std::string& str) {
+  constexpr auto ESCAPE_MAP = create_escape_map();
+  constexpr auto HEX = "0123456789abcdef";
+
+  std::string escaped = std::regex_replace(
+    std::regex_replace(str, std::regex("[\\0\\x07-\\x0d\"\\\\]"), "\\$&"),
+    std::regex("[^\\0\\x07-\\x0d\\x20-\\x7e]"),
+    "\\x$&$&"
+  );
+
+  for (std::size_t i = 0; i < escaped.size(); i++) {
+    escaped[i] = ESCAPE_MAP[static_cast<unsigned char>(escaped[i])];
+    if (escaped[i] == '\0') {
+      i++;
+      escaped[i - 1] = HEX[static_cast<unsigned char>(escaped[i]) >> 4];
+      escaped[i] = HEX[static_cast<unsigned char>(escaped[i]) & 0x0f];
+    }
+  }
+
+  return escaped;
+}
 
 void dump_tv_make_secret() {
   for (const std::uint64_t seed : {
@@ -97,11 +138,6 @@ void dump_tv_wyhash() {
              "abc"s,
              "1234567890123456789012345678901234567890123456789012345678901234567890"s,
            }) {
-        std::string literal = std::regex_replace(
-          std::regex_replace(key, std::regex("\\0"), "\\0"),
-          std::regex("\\xff"),
-          "\\xff"
-        );
         printf(
           "[wyhash] <" SECRET_SPEC "> " HEX64 " \"%s\" => " HEX64 "\n",
           secret[0],
@@ -109,13 +145,15 @@ void dump_tv_wyhash() {
           secret[2],
           secret[3],
           seed,
-          literal.c_str(),
+          escape(key).c_str(),
           wyhash(key.c_str(), key.size(), seed, secret)
         );
       }
     }
   }
 }
+
+}  // namespace
 
 int main() {
   dump_tv_make_secret();
